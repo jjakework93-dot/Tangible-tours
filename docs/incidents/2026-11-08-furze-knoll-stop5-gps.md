@@ -1,4 +1,4 @@
-# Furze Knoll stop 5 GPS autoplay — 8 November 2026
+# Furze Knoll stop 5 and stop 7 GPS autoplay — 8 November 2026
 
 Tour `79685f26-e428-4561-abe7-32bafa7a4d2a`, Devizes to Avebury by Bike. Stop 5, Furze Knoll, played from a tap and did not start on its own while the rider was in the red circle. This note separates what was checked from what is still only a possibility. No tour data was written, no stop was recreated, and the published site was not changed.
 
@@ -67,6 +67,77 @@ Any enter stop uses this path. The progress line is enough to tell the cases apa
 - Next stop N and the diagnostics line says the fix is outside the zone: the loaded radius or pin is the one on screen. After 12:11 that loaded stop 5 is the 320 m circle, not the 420 m circle.
 - Chapter 13 plays when the rider leaves its circle.
 
+## Stop 7, read back without writing
+
+At 13:06 GMT stop 7, “On to Silbury Hill”, was still 51.392409, -1.880840, radius 376 m, trigger on enter, playback once, audio `1793561910246-ry-to-sil-new-bike-t.mp3`. Its row timestamp is the same 12:16 bulk save as the other chapters. The pin and the file name match the earlier reading. Stop 6, “The Wansdyke”, was still 51.390921, -1.914480, radius 300 m. The saved route’s nearest vertex is about 10 m from the stop 7 pin and about 6 m from the stop 6 pin, so an accurate fix on that line is inside both circles. Stop 6 and stop 7 circles are about 2,340 m apart and do not meet.
+
+The same published function that plays stop 5 plays stop 7 when the fix is inside 376 m and the gates below are open. There is still no uploaded diagnostics line, so there is no server evidence that accuracy, an info queue, or any other gate fired for stop 7.
+
+## What “appears” means in this app
+
+The rider map does not draw an ordinary info pin. Parking and walk-start markers are the exception. A rider who sees a numbered pin and a red circle is seeing the stop, loaded with the chapter, with no accuracy test involved. The next-stop name and the distance are written from the GPS fix before the accuracy return, so that banner updates when the fix is rejected.
+
+Info audio and story audio share the next step. After the dot is stored, a reported accuracy over 150 m returns. That return skips the info queue and the story test together. A diagnostics line `Info speech queued` is evidence the guard let the fix through. A player title that names an info point is also after that guard: the title is set when the queue starts the clip, including when `play()` is rejected and no sound starts. Seeing the next-stop banner is not that event.
+
+## Info queue lifecycle
+
+Info rows on this tour were created from 25 October through 4 November. None were created on 8 November. They are small circles, 10–50 m, with their own audio. They do not share a stop’s pin. The A361 alert is about 1,780 m from stop 7 and about 580 m from stop 6, so it is not inside either story circle.
+
+On a fix the guard has accepted:
+
+1. An alert with audio, not yet heard, whose reported point is inside its circle, is marked heard and pushed on the info queue. The heard mark is written before sound starts.
+2. If the player is not already on an info clip, the queue starts that alert and sets the current clip to it.
+3. The story test still runs on the same fix. If the story zone matches and the current clip is an info title, or audio is playing, the story is marked played and held. The log gets `Reached stop N` and `WAITING IN QUEUE: stop N`. The progress count includes N.
+4. When the info clip reaches `ended`, or its error handler runs, the held story starts.
+5. A rejected `play()` does not reach that completion handler. The info title stays current, audio stays paused, and later fixes do not start the story. The story is already marked played, so the zone will not arm it again. Skip clears the current clip and then starts the held story.
+6. A pause of an info clip leaves the same busy state, because the busy check treats any current info title as busy even when audio is paused.
+
+That hold is a real property of the published caller. It fits a ride only when the log contains both the reached line and the waiting line, and the progress count includes the stop. Stop 5’s reported line stayed “4 of 13, next 5”, so that hold had not marked stop 5. Stop 7’s progress count was not reported, so the log is what separates a hold from a rejected fix.
+
+Deleting the info rows and adding them again is not supported by this. The rows are not inside the stop 5 or stop 7 circles. Removing them would drop the A361 warning the saved line does enter, and it would leave the accuracy return and the stop pins as they are. No test here shows a benefit from that destruction.
+
+## Diagnostic decision tree
+
+Copy the on-phone diagnostics before changing a pin, a radius, or an alert.
+
+| On the phone | Established meaning |
+| --- | --- |
+| Distance updates, ignored count rises, line `GPS fix too inaccurate — skipped`, no `Info speech queued`, no `Reached stop` | The accuracy guard rejected the fix. Info audio and the story were both skipped. The banner can still name the next stop. |
+| `Info speech queued`, then `Reached stop N` and `WAITING IN QUEUE: stop N`, progress includes N | The story was accepted and is held behind the info clip. Skip, or the info clip ending, is what starts it. A blocked `play()` leaves the info title on screen without the completion step. |
+| Diagnostics distance says outside the zone | The loaded pin and radius do not contain the fix. The accuracy number was not the reason. After 12:11 a reload of stop 5 uses the 320 m circle. |
+| Accuracy at or under 150, distance says inside, GPS switch on, and no reached line | This published decision would have played the stop. Keep the log. |
+| Owner GPS switch off | The dot still moves. Triggers return before info and story tests. |
+
+There is no server copy of this log. Nothing read today shows the accuracy number from the ride. A smooth change in the distance label is the reported position. It is not the reported accuracy, and it is not a speed measurement. The guard does not read speed. A stationary fix and a moving fix with the same reported accuracy take the same branch.
+
+## Accuracy proposal, measured and not adopted
+
+The proposal was an immediate threshold around 300 m, plus a timed fallback while reported accuracy stays poor. The owner has not approved a live number. These runs use the saved 957-point route, about 22.3 km, and labelled synthetic fixes. They do not show what the phone reported, and they do not show that either proposal would have played stop 5 or stop 7 on the ride.
+
+The probe used for the fallback, and only as a probe, is: accept at once when reported accuracy is 150 m or better; after the reported point has stayed inside one zone for 20 seconds, also accept 151–300 m. Accuracy over 300 m stays rejected.
+
+What the saved geometry does:
+
+- Stop 7’s circle contains the route. A reported point 80 m from that pin with reported accuracy 220 is a true inside fix. The live 150 m guard rejects it. An immediate 300 m guard plays it on the first sample. The 20-second probe plays it only after that dwell. Accuracy 340 stays rejected by all three.
+- The same reported accuracy at speed 0 and at 8.5 m/s is the same decision. Speed is not part of the guard.
+- A report sitting on the A361 pin with reported accuracy 250, while the labelled true point is 250 m away, is rejected at 150 m and is a false road warning at immediate 300 m and after the 20-second probe. A report that claims accuracy 40 m while the true point is 250 m away fires on every policy. No threshold sees an error the phone does not report.
+- The A361 alert, radius 50 m, has its nearest saved vertex about 45 m away. About 70 m of the saved line is inside the circle, near 10.8 km. The Wansdyke pin’s nearest vertex is near 10.2 km, about 600 m earlier along the line. The story circle and the crossing alert are different places. One 70 m parallel copy of the line misses the 50 m circle; the saved line and the other parallel copy enter it. That is a route-side fact. It does not identify a safe side, and nothing was moved.
+- The 10 m “Rider Alert: Road Crossing” near Furze Knoll has its nearest saved vertex about 11 m away, so the saved line does not enter that circle. Raising the accuracy ceiling does not pull an on-route point at 11 m into a 10 m circle. Accepting a noisy report that does land inside it would play a warning the saved line never enters.
+- Worst-case error aimed at a pin can fire a circle from anywhere within radius plus the accepted accuracy. For the A361 alert the route length inside that outer reach grows from the short true crossing, through a few hundred metres at 150 m of error, to a longer stretch at 300 m of error. The exact lengths are recomputed by `accuracy-proposal.test.mjs`.
+- Empty ground between neighbouring circles is 234 m for stops 2 and 3, 290 m for stops 4 and 5 on the current pins, and 240 m for stops 8 and 9. An error of 150 m cannot bridge those circles. An error of 300 m can. Stop 6 and stop 7 stay far apart.
+
+A stale coordinate is a different number from reported accuracy. The published watch may reuse a fix for up to 5 seconds. A 300 m rule does not reject a fresh-looking accuracy attached to an old coordinate. The fresh-run gate and a paused info title also still block a story when accuracy is 8 m. Changing the threshold does not touch those.
+
+Recommendation: leave the live guard at 150 m. There is no phone log that it blocked stop 5 or stop 7. Immediate 300 m accepts false road warnings and can bridge three pairs of story circles. The 20-second probe is less hasty and still false-triggers a poor fix that sits still. Either change needs an approved number and a diagnostics log from a stationary check. This branch does not contain the app source, and no threshold was written into the published project.
+
+## Separate route notes, not a safety fix
+
+These are coordinate facts from the same read. They are not an instruction to move a pin or a line.
+
+- The Wansdyke story pin and the A361 crossing alert are about 580 m apart in a straight line and about 600 m apart along the saved route. The story is the earlier of the two.
+- The home checklist’s missing crossing warning matches two different geometries: the 10 m Road Crossing circle misses the saved line by a few metres, while the 50 m A361 circle contains a short piece of that line and can be missed by a parallel line 70 m to one side.
+- The report that the map takes the wrong side of the Wansdyke is not resolved here. The two parallel copies above only show that 70 m is enough to leave the 50 m alert. They do not label a correct side.
+
 ## Stationary check after the ride
 
 Use a second phone if the ride is still open. Leave Tour Studio closed so another autosave cannot move the pin.
@@ -77,8 +148,31 @@ Use a second phone if the ride is still open. Leave Tour Studio closed so anothe
 4. Expect a log line `Reached stop 5` and the Furze Knoll file to start. Do not tap the stop; a tap starts the file without a GPS arrival and marks it played.
 5. If the log says `GPS fix too inaccurate — skipped`, the accuracy gate is what the phone did. If the switch is off, that is what the phone did. If the log shows a good fix, inside the zone, GPS on, and no reached line, copy the log before anyone changes the pin or the radius.
 
+## Missing opening consonants, not a file verdict
+
+A rider report says some speeches lose the first letter or letters, with “school” coming out like “hall”. A separate read-only listen of the files is already checking the recordings. This pass only looked at the published player. No file was opened, regenerated, or replaced.
+
+Every chapter on this tour, including stops 5, 6, and 7, has its own audio file, an empty master link, and empty start and end times. For that shape the published cut rule asks the player to begin at 0. There are no Horatio asides on this tour to interrupt the first moment. The player has no fade-in. The end guard of a hundredth of a second only pulls a seek back from the end of a cut. It leaves a zero start at zero.
+
+The seek helper sets the time once immediately and again when the new file’s metadata arrives, because phones can drop an early seek. The drop the code is written for sends playback back to the beginning of the file, which keeps an opening rather than removing one. A positive saved start time is put back when metadata arrives, and that would skip the opening of a master cut. This tour’s stories do not have that start time.
+
+Info clips, the farewell, and the walking buffer set the time to 0 in the same step as the source change and do not use that metadata retry. On a standalone file the requested time is already 0.
+
+Code-supported ways the first fraction of a second can still be hard to hear, none of them confirmed on a phone:
+
+- The queue pauses the shared player and then starts the next file at once. There is no inserted silence before the speech. Bluetooth headsets often swallow or duck the first part of a stream that starts after a pause. The phone speaker is the comparison that separates that from the file.
+- The deck applies the speed stored on the phone at every play. A speed above 1× shortens the opening consonants. The control shows the rate. 1× is the unchanged rate.
+- A master-linked stop with a non-zero start time would skip that much of the recording on purpose. That is not how these thirteen chapters are stored.
+
+A file that itself begins mid-word would also play that way, because the player starts these chapters at 0 and does not repair the audio. That possibility belongs to the file audit. This player reading does not choose between a damaged file and a headset.
+
 ## Tests
 
-`npm test` runs `docs/incidents/stop5-trigger-replay.test.mjs`. The tests lock the verified decision: stop 4 then stop 5, a jump to stop 4 after restart, a story queued during other audio, once-only replay, strict order, and the 150 m accuracy gate. They also record the current fresh-run behaviour: skipping 1–4 without clearing that gate plays nothing, including stop 4. That control is not shown when `play_in_order` is false.
+`npm test` runs the incident harness. It is not the rider app.
 
-No production change is included. The reported on-screen state already plays stop 5 in this decision, so a wider trigger or a data edit would hide the phone gate rather than fix a zone-math bug.
+- `stop5-trigger-replay.test.mjs` locks stop 4 then stop 5, a jump to stop 4 after restart, once-only replay, strict order, and the 150 m gate.
+- `info-queue.test.mjs` locks the shared accuracy return, the rider map omitting ordinary info pins, a story held behind an alert until the alert completes, and a blocked info `play()` that keeps the info title up until skip.
+- `opening-seek.test.mjs` locks the published cut rule: a standalone story with no start time seeks to 0, and the end guard does not move that start.
+- `accuracy-proposal.test.mjs` compares the live 150 m guard, an immediate 300 m guard, and a 20-second 300 m probe on the saved route, including speed, a poor fix inside stop 7, an under-reported error, the A361 false warning, the parallel shift, and the circle gaps.
+
+All 34 tests passed in this run. No production change is included. A wider live threshold is not justified by a phone log, and deleting the info speeches is not justified by the stop 5 or stop 7 geometry. The opening-consonant report is not treated as a bad file.
