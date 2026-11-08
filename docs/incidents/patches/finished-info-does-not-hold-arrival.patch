@@ -1,0 +1,32 @@
+diff --git a/src/routes/gps-tours.$slug.tsx b/src/routes/gps-tours.$slug.tsx
+--- a/src/routes/gps-tours.$slug.tsx
++++ b/src/routes/gps-tours.$slug.tsx
+@@ -1119,7 +1119,9 @@
+     setPlayed(playedRef.current)
+     // Continue playback even while the page is hidden, when the phone delivers GPS fixes.
+     // One story at a time: if one is still playing, this stop waits its turn (in number order) and plays when it ends — even with the screen locked.
+-    const busy = openingPending.current || currentRef.current?.id.startsWith('info-') || (!!audio.current && !audio.current.paused && !audio.current.ended)
++    const audioLive = !!audio.current && !audio.current.paused && !audio.current.ended
++    const infoUnfinished = !!currentRef.current?.id.startsWith('info-') && !audio.current?.ended
++    const busy = openingPending.current || infoUnfinished || audioLive
+     if (busy && currentRef.current?.id !== c.id) {
+       if (!pendingStops.current.some(x => x.id === c.id)) { pendingStops.current.push(c); pendingStops.current.sort((x, y) => x.chapter_number - y.chapter_number) }
+       persistGpsBookmark()
+@@ -1244,7 +1246,8 @@
+   function playQueuedAnnouncement(priority = false) {
+     const a = audio.current
+     if (ownerManualRef.current) return false
+-    if (!a || listenAll.current || (priority && currentRef.current?.id.startsWith('info-')) || (!priority && ((!a.paused && !a.ended) || openingPending.current))) return false
++    const infoAlreadyPlaying = !!a && priority && !!currentRef.current?.id.startsWith('info-') && !a.ended
++    if (!a || listenAll.current || infoAlreadyPlaying || (!priority && ((!a.paused && !a.ended) || openingPending.current))) return false
+     const point = pendingAnnouncements.current.shift()
+     if (!point) return false
+     if (point.walk_id && point.walk_id !== activeWalkRef.current) { heardAnn.current.delete(point.id); return playQueuedAnnouncement(priority) }
+@@ -1369,6 +1372,7 @@
+         a.play().catch(() => { currentRef.current = null; setCurrent(null) })
+       }
+     }
++    if (currentRef.current === doneClip) { currentRef.current = null; setCurrent(null) }
+   }
+   function playListeningItem(index: number) {
+     interruptedRecording.current = null
