@@ -102,9 +102,19 @@ Zoom failing at stop 9 matches the first action. It does not show whether stop 8
 
 The map clock and a fast-forward to about 11 minutes stay a separate report. Zoom does not seek the audio. The map time reads the same player and is not a second copy of the file.
 
+## Exit worked, arrivals 5, 7, 8, 9, 10, and 12 did not
+
+The field report is now those six arrival misses. Stop 12 is Avebury Henge, 51.428526, -1.854198, radius 60 m, enter, once. It is a miss. Jake heard a later stop and could not say whether it was 11 or 12. Because 12 failed, that success stays unidentified. It is not counted as stop 12, and it is not assigned to stop 11, the Red Lion. No stored title or info line contains “Avery”.
+
+The finishing speech worked, and a leaving-zone trigger worked. The only chapter stored as an exit is 13, Farewell, at 51.430148, -1.853817, radius 350 m. A log line `Departure message 13` or `Left blue zone 13` is what would tie the rider’s words to that chapter. Manual play of stop 5 also worked. Stop 5 on the master row remains 51.395356, -1.957546, radius 320 m. The phone’s cached copy of that circle is still unknown.
+
+Exit arming and the exit fire sit behind the same early returns as an arrival: the owner switch and reported accuracy over 150 m. A played exit means those two returns were open on the fix that armed the zone and on the fix that left it, and that the player could start a GPS clip. It does not mean they were open at stops 5, 7, 8, 9, 10, or 12. The harness can replay a ride where those arrivals are rejected and the exit still plays, and a ride where the same arrivals play and the exit still plays. The contrast by itself is not a cause. The 300 m proposal stays unapproved.
+
+A miss that never logs `Reached stop` does not fetch that clip. Manual play of stop 5, and a GPS exit that did start audio, are separate from a zone test that never accepted the arrival. Signal between villages, and better signal at Avebury, stays a field impression. Stop 12 is in Avebury and failed, so village coverage is not an explanation.
+
 ## What to copy from the phone after the ride
 
-One diagnostics copy covers stops 5, 7, 8, and 9. The useful lines are `GPS fix too inaccurate — skipped`, `Reached stop` plus the number, `WAITING IN QUEUE`, `Leaving queue`, and `Info recording blocked` or `could not start`. Note the progress count before and after the gesture, whether the owner GPS switch was off, and which control it was: pinch zoom, expand, offline map, or leaving the page. The stop 9 zoom did not play the story. Nothing on the server distinguishes the rest. The recording, when it arrives, is the check.
+One diagnostics copy covers the missed arrivals 5, 7, 8, 9, 10, and 12, plus the leaving speech. The lines that separate the cases are `GPS fix too inaccurate — skipped`, `Reached stop` with the number, `WAITING IN QUEUE`, `Leaving queue`, `Departure message` or `Left blue zone`, and `Info recording blocked` or `could not start`. Do not record stop 12 as a pass. If another later stop played, leave its number blank unless the log names it. The owner switch being off for the whole session would also have blocked the exit that did play. Zooming the map is not a remedy.
 
 ## What “appears” means in this app
 
@@ -206,7 +216,8 @@ A file that itself begins mid-word would also play that way, because the player 
 - `stop5-trigger-replay.test.mjs` locks stop 4 then stop 5, a jump to stop 4 after restart, once-only replay, strict order, and the 150 m gate.
 - `info-queue.test.mjs` locks the shared accuracy return, the rider map omitting ordinary info pins, a story held behind an alert until the alert completes, and a blocked info `play()` that keeps the info title up until skip.
 - `stops-5-7-8-session.test.mjs` locks the current pins for stops 8 and 9, a shared skip across 5, 7, 8, and 9, and the fact that pinch zoom does not start a queued story while a page return can.
+- `exit-versus-arrivals.test.mjs` locks Farewell’s exit, and that a working exit can sit beside either failed or successful arrivals. Stop 12 stays a miss. The unidentified later success is not given a chapter.
 - `opening-seek.test.mjs` locks the published cut rule: a standalone story with no start time seeks to 0, and the end guard does not move that start.
 - `accuracy-proposal.test.mjs` compares the live 150 m guard, an immediate 300 m guard, and a 20-second 300 m probe on the saved route, including speed, a poor fix inside stop 7, an under-reported error, the A361 false warning, the parallel shift, and the circle gaps.
 
-All 41 tests passed in this run. No production change is included. Zooming the map is not a fix. A wider live threshold is not approved. The opening-consonant report is not treated as a bad file.
+All 45 tests passed in this run. No production change is included. Zooming the map is not a fix. A wider live threshold is not approved. The opening-consonant report is not treated as a bad file.

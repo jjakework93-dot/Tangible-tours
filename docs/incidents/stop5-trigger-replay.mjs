@@ -95,6 +95,50 @@ export function stopOnPath(stops, from, to, heading, played, inOrder = true, str
   return null
 }
 
+/** Blue exit zones arm inside the circle and become due once the rider is clearly outside. */
+export function trackExitZones(stops, lat, lng, armed, played, margin = 10, strict = false) {
+  stops = strictStops(stops, played, strict)
+  const due = []
+  const eligible = new Set(stops.filter((s) => s.trigger_on === 'exit').map((s) => s.chapter_number))
+  for (const n of armed) if (!eligible.has(n)) armed.delete(n)
+  for (const s of stops) {
+    if (s.trigger_on !== 'exit' || s.latitude == null || s.longitude == null) continue
+    if (played.has(s.chapter_number) && s.playback_mode !== 'loop') { armed.delete(s.chapter_number); continue }
+    const d = haversineMeters(lat, lng, s.latitude, s.longitude)
+    if (d <= s.trigger_radius_meters) armed.add(s.chapter_number)
+    else if (armed.has(s.chapter_number) && d > s.trigger_radius_meters + margin) {
+      armed.delete(s.chapter_number)
+      due.push(s.chapter_number)
+    }
+  }
+  return due.sort((a, b) => a - b)
+}
+
+/**
+ * Published onPosition order: owner switch and the 150 m return come before
+ * both the exit arm and the enter test. An idle due exit plays and that fix
+ * does not also start an enter.
+ */
+export function decidePublishedFix(state, fix) {
+  const played = state.played
+  const armedExit = state.armedExit ?? new Set()
+  if (state.listenAll) return { action: 'ignored', reason: 'listen-all', played, insideChapter: state.insideChapter, armedExit }
+  if (state.ownerManual) return { action: 'ignored', reason: 'owner-manual', played, insideChapter: state.insideChapter, armedExit }
+  if (fix.accuracy > 150) return { action: 'ignored', reason: 'accuracy', played, insideChapter: state.insideChapter, armedExit }
+  const pool = state.firstGpsPending
+    ? [...state.stops].sort((a, b) => a.chapter_number - b.chapter_number).slice(0, 1)
+    : state.stops
+  const due = trackExitZones(pool, fix.lat, fix.lng, armedExit, played, 10, !!state.playInOrder)
+  if (due.length && !state.busy) {
+    const chapter = due[0]
+    const nextPlayed = new Set(played)
+    nextPlayed.add(chapter)
+    return { action: 'play', reason: 'exit', chapter, played: nextPlayed, insideChapter: state.insideChapter, armedExit }
+  }
+  const enter = decideGpsArrival({ ...state, armedExit }, fix)
+  return { ...enter, armedExit, exitQueued: due }
+}
+
 /** Mirrors gpsTriggerable() plus the caller's exit filter and hardcoded inOrder=true. */
 export function gpsCandidates(stops, played, { playInOrder = false, firstGpsPending = false } = {}) {
   const eligible = playInOrder ? strictStops(stops, played, true) : stops
