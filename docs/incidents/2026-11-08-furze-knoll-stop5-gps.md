@@ -136,6 +136,14 @@ Extra PLAY lines after the labelled `stop 12:` and `stop 13:` starts are further
 
 Recommended change, not made: when an info clip finishes and no story is waiting, drop that current clip, and treat an info title as busy only while its audio is still playing. Stop 12 would then have started at 13:49:26. This log does not explain the earlier stop 5 miss.
 
+## Prepared queue patch, not applied
+
+The original player is Lovable commit `9b2642722bd0d5a369543b804a739c4af01ce74d` in project `f2f122a8-b6c9-4dcc-9fbb-9a9848e53ae2`. That project and https://tangibletours.com were not edited. A tour-library copy would still run this same player, so it would not isolate the code. A project remix was not attempted: payments are enabled and a remix was previously refused. No duplicate tour was created. There is no preview URL of the real player, and no rollback was required because the live source was not changed.
+
+The patch file is `docs/incidents/patches/finished-info-does-not-hold-arrival.patch`. It targets `src/routes/gps-tours.$slug.tsx` at that commit. It does three things: an info title counts as busy only until its audio has ended; the next alert is not blocked by an info title whose audio has ended; and when a clip finishes with nothing waiting, that current clip is cleared. A paused or rejected info clip still holds the next stop. The owner switch and the 150 m return are unchanged. Farewell still starts when the player is idle, and waits when a story is actually playing.
+
+`queue-side-by-side.test.mjs` runs the published rule and the patched rule on the same events. The published rule queues stop 12 after the finished Avebury Village alert. The patched rule starts stop 12 at that arrival. This is not a phone proof. The bug sits in the one GPS rider player used for these tours, so any later arrival can be held after an info alert has finished. The phone log confirms that only for stop 12. It does not show that stops 5, 7, 8, 9, or 10 failed for this reason.
+
 ## What to copy from the phone after the ride
 
 One diagnostics copy covers the missed arrivals 5, 7, 8, 9, 10, and 12, plus the leaving speech. The lines that separate the cases are `GPS fix too inaccurate — skipped`, `Reached stop` with the number, `WAITING IN QUEUE`, `Leaving queue`, `Departure message` or `Left blue zone`, and `Info recording blocked` or `could not start`. Do not record stop 12 as a pass. If another later stop played, leave its number blank unless the log names it. The owner switch being off for the whole session would also have blocked the exit that did play. Zooming the map is not a remedy.
@@ -240,8 +248,8 @@ A file that itself begins mid-word would also play that way, because the player 
 - `stop5-trigger-replay.test.mjs` locks stop 4 then stop 5, a jump to stop 4 after restart, once-only replay, strict order, and the 150 m gate.
 - `info-queue.test.mjs` locks the shared accuracy return, the rider map omitting ordinary info pins, a story held behind an alert until the alert completes, and a blocked info `play()` that keeps the info title up until skip.
 - `stops-5-7-8-session.test.mjs` locks the current pins for stops 8 and 9, a shared skip across 5, 7, 8, and 9, and the fact that pinch zoom does not start a queued story while a page return can.
-- `finished-info-holds-stop.test.mjs` replays the logged order: the Avebury Village alert completes, stop 12 then waits behind that title, and Farewell’s completion releases it. Clearing the finished title would start stop 12 at the zone. That change is not in the app.
+- `queue-side-by-side.test.mjs` runs the published rule and the patched rule on the same events. Only the patched rule starts stop 12 after the finished alert. The live player is unchanged.
 - `opening-seek.test.mjs` locks the published cut rule: a standalone story with no start time seeks to 0, and the end guard does not move that start.
 - `accuracy-proposal.test.mjs` compares the live 150 m guard, an immediate 300 m guard, and a 20-second 300 m probe on the saved route, including speed, a poor fix inside stop 7, an under-reported error, the A361 false warning, the parallel shift, and the circle gaps.
 
-All 48 tests passed in this run. The finished-info hold is the likely cause of this session’s stop 12 delay. It is not applied to the app, and it does not explain the earlier stop 5 miss.
+All 56 tests passed in this run. The side-by-side harness shows the published hold and the patched release. Neither result is a phone trial, and the live player is unchanged.
