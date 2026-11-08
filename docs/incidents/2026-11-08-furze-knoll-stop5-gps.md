@@ -4,7 +4,7 @@ Tour `79685f26-e428-4561-abe7-32bafa7a4d2a`, Devizes to Avebury by Bike. Stop 5,
 
 ## What this repository is
 
-`jjakework93-dot/Tangible-tours` contained only a README when this investigation started. The published rider app is the Lovable project `f2f122a8-b6c9-4dcc-9fbb-9a9848e53ae2`, commit `9b2642722bd0d5a369543b804a739c4af01ce74d` (5 November 2026, “Fix Google Ads loader typing”). The later preview commit is recorded below and is not the public site.
+`jjakework93-dot/Tangible-tours` contained only a README when this investigation started. The published rider app is the Lovable project `f2f122a8-b6c9-4dcc-9fbb-9a9848e53ae2`, commit `9b2642722bd0d5a369543b804a739c4af01ce74d` (5 November 2026, “Fix Google Ads loader typing”). Later preview commits are recorded below and are not the public site.
 
 The public site is https://tangibletours.com. Its published page still carries `data-commit-sha="9b2642722bd0d5a369543b804a739c4af01ce74d"` and `assets/index-BP7lQ-Wm.js`. Publishing is a separate Lovable action, and that snapshot was not republished. An unpublished preview commit, `0e1e9294c843725b4f4bfe9a580fe3062523eaae`, now holds the queue edit described below. The preview address returned 401 from this environment, so the GPS screen was not clicked there. Lovable’s typecheck on that edit passed. The service worker asks the network first and uses its cache when the network fails. An online phone on the public site is still on the published snapshot.
 
@@ -144,6 +144,12 @@ The patch file is `docs/incidents/patches/finished-info-does-not-hold-arrival.pa
 
 `queue-side-by-side.test.mjs` runs the published rule and the patched rule on the same events. The published rule queues stop 12 after the finished Avebury Village alert. The patched rule starts stop 12 at that arrival. This is not a phone proof. The bug sits in the one GPS rider player used for these tours, so any later arrival can be held after an info alert has finished. The phone log confirms that only for stop 12. It does not show that stops 5, 7, 8, 9, or 10 failed for this reason.
 
+## Ghost walk preview
+
+The walk Jake is testing is the published tour `devizes-after-dark-ghost-walk`, “Devizes After Dark: The Ghost Walk”. Its saved `play_in_order` is already true and its travel mode is WALK. No tour row was rewritten. Preview commit `64533b234f0785dd00be6654ee1b07974255281b` is on top of the queue commit `0e1e9294`. The three queue lines are still present. The public page still names `9b2642722bd0d5a369543b804a739c4af01ce74d`.
+
+On the rider map the position marker is larger, labelled “You” until a heading exists, drawn above the stop pins, with an accuracy circle up to 500 m. The map shows “Start the tour to show your location”, “Location is blocked…”, the GPS error, “Finding your location…”, “Last known position”, or “You are here” with the accuracy. While tracking, the map button says “Following you” or “Re-centre on me”. For tours with `play_in_order`, a tap replays a finished stop or plays the next number, and a later number does not play or get marked done. “Skip to next stop” is removed, and “Skip stop” is hidden. The bike tour’s `play_in_order` is false, so its jump and Skip stop stay. Lovable’s typecheck passed. This environment cannot open the preview without a sign-in, so the marker was not clicked on a phone. https://tangibletours.com does not have this commit.
+
 ## What to copy from the phone after the ride
 
 One diagnostics copy covers the missed arrivals 5, 7, 8, 9, 10, and 12, plus the leaving speech. The lines that separate the cases are `GPS fix too inaccurate — skipped`, `Reached stop` with the number, `WAITING IN QUEUE`, `Leaving queue`, `Departure message` or `Left blue zone`, and `Info recording blocked` or `could not start`. Do not record stop 12 as a pass. If another later stop played, leave its number blank unless the log names it. The owner switch being off for the whole session would also have blocked the exit that did play. Zooming the map is not a remedy.
@@ -252,4 +258,4 @@ A file that itself begins mid-word would also play that way, because the player 
 - `opening-seek.test.mjs` locks the published cut rule: a standalone story with no start time seeks to 0, and the end guard does not move that start.
 - `accuracy-proposal.test.mjs` compares the live 150 m guard, an immediate 300 m guard, and a 20-second 300 m probe on the saved route, including speed, a poor fix inside stop 7, an under-reported error, the A361 false warning, the parallel shift, and the circle gaps.
 
-All 56 tests passed in this run. The side-by-side harness shows the published hold and the patched release. Neither result is a phone trial. The public site is still the baseline commit.
+All 58 tests passed in this run. The side-by-side harness shows the published hold and the patched release. The order tests copy the Ghost walk preview rule. Neither result is a phone trial. The public site is still the baseline commit.
