@@ -73,6 +73,39 @@ At 13:06 GMT stop 7, “On to Silbury Hill”, was still 51.392409, -1.880840, r
 
 The same published function that plays stop 5 plays stop 7 when the fix is inside 376 m and the gates below are open. There is still no uploaded diagnostics line, so there is no server evidence that accuracy, an info queue, or any other gate fired for stop 7.
 
+## Stop 8, same ride, same limit
+
+At 13:24 GMT stop 8, “Silbury Hill”, was still 51.414836, -1.857679, radius 102 m, trigger on enter, playback once, empty trim, audio `1793563489597-Silbury-New.mp3`. The row timestamp is the same 12:16 bulk save. The saved route’s nearest vertex is on that pin, inside the 102 m circle. The 150 m guard uses the reported accuracy, not the zone size, so it applies to this smaller circle in the same way as to stops 5 and 7. A reported point on the pin with accuracy 151 is rejected and the stop is not marked played. A reported point on the pin with accuracy 12 plays. There is no phone log that the guard did this on the ride. The 300 m proposal stays unapproved because of the false warnings already measured.
+
+A cause that fits all three stops has to leave each one unplayed if the progress line was still “next” when the rider was inside it. These session states do that, and they last until the page is reloaded or the switch is changed:
+
+- Reported accuracy over 150 m on each fix. The banner still moves. Info audio is skipped on those same fixes.
+- The owner GPS switch off.
+
+These do not fit a run of unplayed stops, because each one marks the stop played:
+
+- A blocked info `play()`. The info title stays current. The promise rejection does not call the completion handler. Stops 5, 7, and 8 would be queued and counted done, with no “starting audio” line, until Skip. The media `error` event does call completion and would then start the held story. Stop 5 staying on “next 5” means this hold had not happened yet.
+- A rejected story `play()`. The played mark is written before `play()`, and the rejection only toasts. The stop stays counted and is not armed again.
+- The fresh-run gate ends at the first GPS arrival. A GPS play of stop 4, or a jump from the stop list, leaves later stops free. It cannot by itself silence 5, 7, 8, and 9.
+
+## Stop 9, and the map gesture
+
+At 13:28 GMT chapter 9 was still “West Kennet Long Barrow”, 51.414157, -1.851983, radius 60 m, trigger on enter, playback once, empty trim, audio `1793566344050-West-Kennet-Long-Barrow-NEW-Bike-Tour.mp3`. The same 12:16 save. Silbury Hill is chapter 8. The saved route passes through this 60 m circle. Zooming that map out and back in did not start the speech. The earlier moment at stop 8, described as the map going off and on, did start speech once. That pair of results means the gesture is not a remedy.
+
+The published page has three different map actions:
+
+- Pinch zoom on the rider map, and the expand/collapse button, only change the map view. The map stays mounted. The GPS watch, the fresh-fix request, the played set, and the audio queue are untouched.
+- “Show offline map” hides the live map and leaves it mounted. The on-page note says GPS stories continue. It does not restart the watch or play a held story.
+- The page becoming visible again, which is what leaving the tour and coming back does, restarts the watch, asks for a new fix, and if a story is already waiting and the player is idle, starts that story. Coming online or a `pageshow` asks for a new fix and does not by itself play the waiting story.
+
+Zoom failing at stop 9 matches the first action. It does not show whether stop 8 was a held story being released, or a later fix that the zone test accepted. It also does not show that the pins are right. A screen recording that names the control, and the diagnostics lines just before and after it, is what separates those. Do not repeat the gesture as a way to make a stop play.
+
+The map clock and a fast-forward to about 11 minutes stay a separate report. Zoom does not seek the audio. The map time reads the same player and is not a second copy of the file.
+
+## What to copy from the phone after the ride
+
+One diagnostics copy covers stops 5, 7, 8, and 9. The useful lines are `GPS fix too inaccurate — skipped`, `Reached stop` plus the number, `WAITING IN QUEUE`, `Leaving queue`, and `Info recording blocked` or `could not start`. Note the progress count before and after the gesture, whether the owner GPS switch was off, and which control it was: pinch zoom, expand, offline map, or leaving the page. The stop 9 zoom did not play the story. Nothing on the server distinguishes the rest. The recording, when it arrives, is the check.
+
 ## What “appears” means in this app
 
 The rider map does not draw an ordinary info pin. Parking and walk-start markers are the exception. A rider who sees a numbered pin and a red circle is seeing the stop, loaded with the chapter, with no accuracy test involved. The next-stop name and the distance are written from the GPS fix before the accuracy return, so that banner updates when the fix is rejected.
@@ -172,7 +205,8 @@ A file that itself begins mid-word would also play that way, because the player 
 
 - `stop5-trigger-replay.test.mjs` locks stop 4 then stop 5, a jump to stop 4 after restart, once-only replay, strict order, and the 150 m gate.
 - `info-queue.test.mjs` locks the shared accuracy return, the rider map omitting ordinary info pins, a story held behind an alert until the alert completes, and a blocked info `play()` that keeps the info title up until skip.
+- `stops-5-7-8-session.test.mjs` locks the current pins for stops 8 and 9, a shared skip across 5, 7, 8, and 9, and the fact that pinch zoom does not start a queued story while a page return can.
 - `opening-seek.test.mjs` locks the published cut rule: a standalone story with no start time seeks to 0, and the end guard does not move that start.
 - `accuracy-proposal.test.mjs` compares the live 150 m guard, an immediate 300 m guard, and a 20-second 300 m probe on the saved route, including speed, a poor fix inside stop 7, an under-reported error, the A361 false warning, the parallel shift, and the circle gaps.
 
-All 34 tests passed in this run. No production change is included. A wider live threshold is not justified by a phone log, and deleting the info speeches is not justified by the stop 5 or stop 7 geometry. The opening-consonant report is not treated as a bad file.
+All 41 tests passed in this run. No production change is included. Zooming the map is not a fix. A wider live threshold is not approved. The opening-consonant report is not treated as a bad file.
