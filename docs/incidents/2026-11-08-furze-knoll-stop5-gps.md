@@ -4,9 +4,9 @@ Tour `79685f26-e428-4561-abe7-32bafa7a4d2a`, Devizes to Avebury by Bike. Stop 5,
 
 ## What this repository is
 
-`jjakework93-dot/Tangible-tours` contained only a README when this investigation started. The rider app is the Lovable project `f2f122a8-b6c9-4dcc-9fbb-9a9848e53ae2`, commit `9b2642722bd0d5a369543b804a739c4af01ce74d` (5 November 2026, “Fix Google Ads loader typing”). There has been no later code commit.
+`jjakework93-dot/Tangible-tours` contained only a README when this investigation started. The published rider app is the Lovable project `f2f122a8-b6c9-4dcc-9fbb-9a9848e53ae2`, commit `9b2642722bd0d5a369543b804a739c4af01ce74d` (5 November 2026, “Fix Google Ads loader typing”). The later preview commit is recorded below and is not the public site.
 
-The public site is https://tangibletours.com. Its live bundles `assets/tour-triggers-BGs-ssOX.js` and `assets/gps-tours._slug-D7w8Gzr9.js` match that commit: the zone test is the same function, and the GPS caller passes numerical order as `true` and the tour’s `play_in_order` flag as the strict flag. The service worker asks the network first and uses its cache when the network fails. An online phone is on this published bundle. Publishing is a separate Lovable action. This branch was not published, and the Lovable editor was not asked to change the app.
+The public site is https://tangibletours.com. Its published page still carries `data-commit-sha="9b2642722bd0d5a369543b804a739c4af01ce74d"` and `assets/index-BP7lQ-Wm.js`. Publishing is a separate Lovable action, and that snapshot was not republished. An unpublished preview commit, `0e1e9294c843725b4f4bfe9a580fe3062523eaae`, now holds the queue edit described below. The preview address returned 401 from this environment, so the GPS screen was not clicked there. Lovable’s typecheck on that edit passed. The service worker asks the network first and uses its cache when the network fails. An online phone on the public site is still on the published snapshot.
 
 The replay in this folder copies that verified decision so the tests can run here. It is not a second copy of the app, and it must not be synced over the Lovable project.
 
@@ -134,11 +134,11 @@ The published busy check is `opening`, or a current clip whose id begins with `i
 
 Extra PLAY lines after the labelled `stop 12:` and `stop 13:` starts are further `playing` events on the same element. They are not extra GPS triggers, and a PLAY line is not proof the rider heard the audio.
 
-Recommended change, not made: when an info clip finishes and no story is waiting, drop that current clip, and treat an info title as busy only while its audio is still playing. Stop 12 would then have started at 13:49:26. This log does not explain the earlier stop 5 miss.
+That change is now in the unpublished preview commit below. It is not on https://tangibletours.com. This log does not explain the earlier stop 5 miss.
 
-## Prepared queue patch, not applied
+## Unpublished preview commit
 
-The original player is Lovable commit `9b2642722bd0d5a369543b804a739c4af01ce74d` in project `f2f122a8-b6c9-4dcc-9fbb-9a9848e53ae2`. That project and https://tangibletours.com were not edited. A tour-library copy would still run this same player, so it would not isolate the code. A project remix was not attempted: payments are enabled and a remix was previously refused. No duplicate tour was created. There is no preview URL of the real player, and no rollback was required because the live source was not changed.
+The published player remains Lovable commit `9b2642722bd0d5a369543b804a739c4af01ce74d`. On 8 November 2026 the same three edits were applied to project `f2f122a8-b6c9-4dcc-9fbb-9a9848e53ae2` and saved as commit `0e1e9294c843725b4f4bfe9a580fe3062523eaae`. The diff is only `src/routes/gps-tours.$slug.tsx`: six added lines and two removed. The target lines were read at the baseline before the edit. Lovable reported a passing typecheck. `deploy_project` was not called. After the commit, the public homepage still named `9b2642722bd0d5a369543b804a739c4af01ce74d` and did not contain `0e1e9294`. Preview URL: https://id-preview--f2f122a8-b6c9-4dcc-9fbb-9a9848e53ae2.lovable.app. Editor: https://lovable.dev/projects/f2f122a8-b6c9-4dcc-9fbb-9a9848e53ae2. This environment got 401 from the preview, so the GPS page was not exercised there. Rollback of the preview is the baseline commit in Lovable version history. The public site does not need a rollback.
 
 The patch file is `docs/incidents/patches/finished-info-does-not-hold-arrival.patch`. It targets `src/routes/gps-tours.$slug.tsx` at that commit. It does three things: an info title counts as busy only until its audio has ended; the next alert is not blocked by an info title whose audio has ended; and when a clip finishes with nothing waiting, that current clip is cleared. A paused or rejected info clip still holds the next stop. The owner switch and the 150 m return are unchanged. Farewell still starts when the player is idle, and waits when a story is actually playing.
 
@@ -248,8 +248,8 @@ A file that itself begins mid-word would also play that way, because the player 
 - `stop5-trigger-replay.test.mjs` locks stop 4 then stop 5, a jump to stop 4 after restart, once-only replay, strict order, and the 150 m gate.
 - `info-queue.test.mjs` locks the shared accuracy return, the rider map omitting ordinary info pins, a story held behind an alert until the alert completes, and a blocked info `play()` that keeps the info title up until skip.
 - `stops-5-7-8-session.test.mjs` locks the current pins for stops 8 and 9, a shared skip across 5, 7, 8, and 9, and the fact that pinch zoom does not start a queued story while a page return can.
-- `queue-side-by-side.test.mjs` runs the published rule and the patched rule on the same events. Only the patched rule starts stop 12 after the finished alert. The live player is unchanged.
+- `queue-side-by-side.test.mjs` runs the published rule and the patched rule on the same events. Only the patched rule starts stop 12 after the finished alert. That rule is now the unpublished preview commit. The public site is unchanged.
 - `opening-seek.test.mjs` locks the published cut rule: a standalone story with no start time seeks to 0, and the end guard does not move that start.
 - `accuracy-proposal.test.mjs` compares the live 150 m guard, an immediate 300 m guard, and a 20-second 300 m probe on the saved route, including speed, a poor fix inside stop 7, an under-reported error, the A361 false warning, the parallel shift, and the circle gaps.
 
-All 56 tests passed in this run. The side-by-side harness shows the published hold and the patched release. Neither result is a phone trial, and the live player is unchanged.
+All 56 tests passed in this run. The side-by-side harness shows the published hold and the patched release. Neither result is a phone trial. The public site is still the baseline commit.

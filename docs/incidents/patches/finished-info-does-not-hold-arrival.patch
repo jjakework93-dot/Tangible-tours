@@ -22,11 +22,11 @@ diff --git a/src/routes/gps-tours.$slug.tsx b/src/routes/gps-tours.$slug.tsx
      const point = pendingAnnouncements.current.shift()
      if (!point) return false
      if (point.walk_id && point.walk_id !== activeWalkRef.current) { heardAnn.current.delete(point.id); return playQueuedAnnouncement(priority) }
-@@ -1367,6 +1370,7 @@
-         currentRef.current = clip; setCurrent(clip)
-         a.src = url; a.currentTime = 0; a.loop = false; endAt.current = null
+@@ -1369,6 +1372,7 @@
          a.play().catch(() => { currentRef.current = null; setCurrent(null) })
        }
      }
 +    if (currentRef.current === doneClip) { currentRef.current = null; setCurrent(null) }
    }
+   function playListeningItem(index: number) {
+     interruptedRecording.current = null
