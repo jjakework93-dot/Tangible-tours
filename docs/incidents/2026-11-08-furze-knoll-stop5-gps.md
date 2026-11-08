@@ -112,6 +112,30 @@ Exit arming and the exit fire sit behind the same early returns as an arrival: t
 
 A miss that never logs `Reached stop` does not fetch that clip. Manual play of stop 5, and a GPS exit that did start audio, are separate from a zone test that never accepted the arrival. Signal between villages, and better signal at Avebury, stays a field impression. Stop 12 is in Avebury and failed, so village coverage is not an explanation.
 
+## Phone log, 13:46–13:56, this session only
+
+Jake attached the on-phone diagnostics at 14:35. He warned the tour had been stopped and restarted, and that this buffer is the latest session, not the earlier stop 5 miss. The raw track is not copied here. Times below are the event lines. Accuracies on the arrival and exit lines in this buffer are ±4 m. No `GPS fix too inaccurate` line appears.
+
+Recorded order:
+
+- 13:46:43 left red zone 11, the Red Lion. This buffer has no `Reached stop 11` line. 13:47:46 logs `Audio started: The Red Lion, Avebury`. That PLAY line alone does not show an automatic arrival.
+- 13:48:15 entered and started `Rider Alert: Avebury Village` at ±4 m.
+- 13:48:28 `Audio completed: Rider Alert: Avebury Village`.
+- 13:48:37 entered blue zone 13, Farewell.
+- 13:49:26 entered red zone 12 and `Reached stop 12: Avebury Henge` at ±4 m, then `WAITING IN QUEUE: stop 12 — position 1 of 1, plays after "Rider Alert: Avebury Village" finishes`.
+- 13:50:04 left red zone 12.
+- 13:51:05 left blue zone 13. 13:51:08 the departure was queued and Farewell’s audio start was logged. The 150 m return was open on that fix.
+- 13:51:42 is the last GPS line before a run of `GPS quiet — auto-refreshing location` notes. Those notes are the page timer, not a network diagnosis. A fix returns at 14:34:06 with accuracy ±18 m, then the reported accuracy settles through the high twenties into single digits. Another leave of blue zone 13 is logged then.
+- 13:54:04 `Audio completed: Farewell`, then `Leaving queue: stop 12` and a PLAY line for Avebury Henge.
+
+Stop 12’s arrival in this log passed the accuracy return and the zone test. The 150 m guard is not the cause of this delay. The story was held for about four and a half minutes after the info clip had already logged completion, and it started when Farewell’s completion drained the queue, after the rider had already left zone 12.
+
+The published busy check is `opening`, or a current clip whose id begins with `info-`, or audio that is actually playing. Completion runs the next queued clip and does not clear the current clip when nothing is waiting. The waiting-line text is that current title. At 13:49:26 the title was still the info alert whose completion had been logged at 13:48:28, and there is no second info PLAY line in between. The likely source is that finished info clip remaining current, so the info-id check stays true after `ended`. The exit path starts Farewell from audio being idle, which does not look at that info id, so Farewell can begin while the old title is still current. Farewell’s own completion then reaches `Leaving queue`. That is the code path that produces this log. It is not a second arrival of stop 12.
+
+Extra PLAY lines after the labelled `stop 12:` and `stop 13:` starts are further `playing` events on the same element. They are not extra GPS triggers, and a PLAY line is not proof the rider heard the audio.
+
+Recommended change, not made: when an info clip finishes and no story is waiting, drop that current clip, and treat an info title as busy only while its audio is still playing. Stop 12 would then have started at 13:49:26. This log does not explain the earlier stop 5 miss.
+
 ## What to copy from the phone after the ride
 
 One diagnostics copy covers the missed arrivals 5, 7, 8, 9, 10, and 12, plus the leaving speech. The lines that separate the cases are `GPS fix too inaccurate — skipped`, `Reached stop` with the number, `WAITING IN QUEUE`, `Leaving queue`, `Departure message` or `Left blue zone`, and `Info recording blocked` or `could not start`. Do not record stop 12 as a pass. If another later stop played, leave its number blank unless the log names it. The owner switch being off for the whole session would also have blocked the exit that did play. Zooming the map is not a remedy.
@@ -216,8 +240,8 @@ A file that itself begins mid-word would also play that way, because the player 
 - `stop5-trigger-replay.test.mjs` locks stop 4 then stop 5, a jump to stop 4 after restart, once-only replay, strict order, and the 150 m gate.
 - `info-queue.test.mjs` locks the shared accuracy return, the rider map omitting ordinary info pins, a story held behind an alert until the alert completes, and a blocked info `play()` that keeps the info title up until skip.
 - `stops-5-7-8-session.test.mjs` locks the current pins for stops 8 and 9, a shared skip across 5, 7, 8, and 9, and the fact that pinch zoom does not start a queued story while a page return can.
-- `exit-versus-arrivals.test.mjs` locks Farewell’s exit, and that a working exit can sit beside either failed or successful arrivals. Stop 12 stays a miss. The unidentified later success is not given a chapter.
+- `finished-info-holds-stop.test.mjs` replays the logged order: the Avebury Village alert completes, stop 12 then waits behind that title, and Farewell’s completion releases it. Clearing the finished title would start stop 12 at the zone. That change is not in the app.
 - `opening-seek.test.mjs` locks the published cut rule: a standalone story with no start time seeks to 0, and the end guard does not move that start.
 - `accuracy-proposal.test.mjs` compares the live 150 m guard, an immediate 300 m guard, and a 20-second 300 m probe on the saved route, including speed, a poor fix inside stop 7, an under-reported error, the A361 false warning, the parallel shift, and the circle gaps.
 
-All 45 tests passed in this run. No production change is included. Zooming the map is not a fix. A wider live threshold is not approved. The opening-consonant report is not treated as a bad file.
+All 48 tests passed in this run. The finished-info hold is the likely cause of this session’s stop 12 delay. It is not applied to the app, and it does not explain the earlier stop 5 miss.
